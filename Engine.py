@@ -22,11 +22,45 @@ class GameState:
         ]
         self.whiteToMove = True
         self.moveLog = []
+    '''
+     Takes a Move as a parameter and executes it (this will not work for castling, pawn promotion, and en-passant)
+    '''
     def make_move(self, move):
         self.board[move.startrow][move.startcol] = "--"
         self.board[move.endrow][move.endcol] = move.pieceMoved
         self.moveLog.append(move)  # log the move so we can undo it later
         self.whiteToMove = not self.whiteToMove  # swap players
+    '''
+     Undo the last move made.
+    '''
+    def undoMove(self):
+        if len(self.moveLog) != 0:  # make sure that there is a move to undo
+            move = self.moveLog.pop()
+            self.board[move.startrow][move.startcol] = move.pieceMoved
+            self.board[move.endrow][move.endcol] = move.pieceCaptured
+            self.whiteToMove = not self.whiteToMove  # switch turns back
+    '''
+     All moves considering checks
+    '''
+    def getValidMoves(self):
+        pass # for now we will not worry about checks
+    '''
+     All moves without considering checks
+    '''
+    def getAllPossibleMoves(self):
+        moves = []
+        for r in range(len(self.board)):  # number of rows
+            # number of columns in a given row
+            for c in range(len(self.board[r])):
+                turn = self.board[r][c][0]  # the piece color
+                if (turn == "w" and self.whiteToMove) or (
+                    turn == "b" and not self.whiteToMove
+                ):
+                    piece = self.board[r][c][1]  # the piece type
+                    # generate the all possible valid moves for each piece
+                    self.moveFunctions[piece](r, c, moves)
+        return moves
+
         
 class Move:
     ranksToRows = {"1":7, "2":6, "3":5, "4":4,
