@@ -22,6 +22,41 @@ class GameState:
         ]
         self.whiteToMove = True
         self.moveLog = []
+    def make_move(self, move):
+        self.board[move.startrow][move.startcol] = "--"
+        self.board[move.endrow][move.endcol] = move.pieceMoved
+        self.moveLog.append(move)  # log the move so we can undo it later
+        self.whiteToMove = not self.whiteToMove  # swap players
+        
+class Move:
+    ranksToRows = {"1":7, "2":6, "3":5, "4":4,
+                   "5":3, "6":2, "7":1, "8":0}
+    rowsToRanks = {v: k for k, v in ranksToRows.items()}
+    filesToCols = {"a":0, "b":1, "c":2, "d":3,
+                   "e":4, "f":5, "g":6, "h":7}
+    colsToFiles = {v: k for k, v in filesToCols.items()}
+    def __init__(self, startSq, endSq, board):
+        self.startrow = startSq[0]
+        self.startcol = startSq[1]
+        self.endrow = endSq[0]
+        self.endcol = endSq[1]
+        self.pieceMoved = board[self.startrow][self.startcol]
+        self.pieceCaptured = board[self.endrow][self.endcol]
+        
+        self.moveID = self.startrow * 1000 + self.startcol * 100 + self.endrow * 10 + self.endcol
+    def __eq__(self, other):
+        if isinstance(other, Move):
+            return self.moveID == other.moveID
+        return False
+        
+    def get_chess_notation(self):
+        # You can make this like real chess notation later
+        return self.get_rank_file(self.startrow, self.startcol) + self.get_rank_file(self.endrow, self.endcol)
+        
+        
+    def get_rank_file(self, r, c):
+        # return rank and file notation
+        return self.colsToFiles[c] + self.rowsToRanks[r]
         
     
         
