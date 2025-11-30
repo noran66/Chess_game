@@ -43,7 +43,7 @@ class GameState:
      All moves considering checks
     '''
     def getValidMoves(self):
-        pass # for now we will not worry about checks
+        return self.getAllPossibleMoves() # for now we will not worry about checks
     '''
      All moves without considering checks
     '''
@@ -53,15 +53,119 @@ class GameState:
             # number of columns in a given row
             for c in range(len(self.board[r])):
                 turn = self.board[r][c][0]  # the piece color
+                
                 if (turn == "w" and self.whiteToMove) or (
                     turn == "b" and not self.whiteToMove
                 ):
-                    piece = self.board[r][c][1]  # the piece type
-                    # generate the all possible valid moves for each piece
-                    self.moveFunctions[piece](r, c, moves)
+                    
+                    piece = self.board[r][c][1]  
+                    if piece == "P":
+                        self.getPawnMoves(r, c, moves)
+                    elif piece == "R":
+                        self.getRookMoves(r, c, moves)
+                    elif piece == "N":
+                        self.getKnightMoves(r, c, moves)
+                    elif piece == "B":
+                        self.getBishopMoves(r, c, moves)
+                    elif piece == "Q":
+                        self.getQueenMoves(r, c, moves)
+                    elif piece == "K":
+                        self.getKingMoves(r, c, moves)
+                        
+
         return moves
 
-        
+    '''
+    Get all the pawn moves for the pawn located at row, col and add these moves to the list 
+    '''
+    def getPawnMoves(self, r, c, moves):
+        if self.whiteToMove: # white pawn moves
+            if self.board[r-1][c] == "--" and r-1 >= 0: #the square in front is empty
+                moves.append(Move((r, c), (r-1, c), self.board)) # 1 square ahead
+                if r == 6 and self.board[r-2][c] == "--": # starting square and 2 squares ahead is empty
+                    moves.append(Move((r, c), (r-2, c), self.board)) # 2 squares ahead
+            # captures
+            if c-1>=0: # capture to the left
+                if self.board[r-1][c-1][0] == "b": # there is an enemy piece to capture
+                    moves.append(Move((r, c), (r-1, c-1), self.board))
+            if c+1<=7: # capture to the right
+                if self.board[r-1][c+1][0] == "b": # there is an enemy piece to capture
+                    moves.append(Move((r, c), (r-1, c+1), self.board))
+        else: # black pawn moves
+            if self.board[r+1][c] == "--" and r+1 <=7: #the square in front is empty
+                moves.append(Move((r, c), (r+1, c), self.board)) # 1 square ahead
+                if r == 1 and self.board[r+2][c] == "--": # starting square and 2 squares ahead is empty
+                    moves.append(Move((r, c), (r+2, c), self.board)) # 2 squares ahead
+            # captures
+            if c-1>=0: # capture to the left
+                if self.board[r+1][c-1][0] == "w": # there is an enemy piece to capture
+                    moves.append(Move((r, c), (r+1, c-1), self.board))
+            if c+1<=7: # capture to the right
+                if self.board[r+1][c+1][0] == "w": # there is an enemy piece to capture
+                    moves.append(Move((r, c), (r+1, c+1), self.board))
+    '''
+    Get all the rook moves for the rook located at row, col and add these moves to
+    the list 
+    '''
+    def getRookMoves(self, r, c, moves):
+        if self.whiteToMove: # white rook moves
+            directions = [(-1, 0), (0, -1), (1, 0), (0, 1)] # up, left, down, right
+            for d in directions:
+                for i in range(1, 8):
+                    endRow = r + d[0] * i
+                    endCol = c + d[1] * i
+                    if 0 <= endRow < 8 and 0 <= endCol < 8: # on board
+                        endPiece = self.board[endRow][endCol]
+                        if endPiece == "--": # empty square
+                            moves.append(Move((r, c), (endRow, endCol), self.board))
+                        elif endPiece[0] == "b": # enemy piece
+                            moves.append(Move((r, c), (endRow, endCol), self.board))
+                            break
+                        else: # friendly piece
+                            break
+                    else: # off board
+                        break
+        else: # black rook moves
+            directions = [(-1, 0), (0, -1), (1, 0), (0, 1)] # up, left, down, right
+            for d in directions:
+                for i in range(1, 8):
+                    endRow = r + d[0] * i
+                    endCol = c + d[1] * i
+                    if 0 <= endRow < 8 and 0 <= endCol < 8: # on board
+                        endPiece = self.board[endRow][endCol]
+                        if endPiece == "--": # empty square
+                            moves.append(Move((r, c), (endRow, endCol), self.board))
+                        elif endPiece[0] == "w": # enemy piece
+                            moves.append(Move((r, c), (endRow, endCol), self.board))
+                            break
+                        else: # friendly piece
+                            break
+                    else: # off board
+                        break
+    '''
+    Get all the knight moves for the knight located at row, col and add these moves to
+    the list 
+    '''    
+    def getKnightMoves(self, r, c, moves):
+        pass
+    '''
+    Get all the bishop moves for the bishop located at row, col and add these moves to
+    the list 
+    ''' 
+    def getBishopMoves(self, r, c, moves):
+        pass
+    '''
+    Get all the queen moves for the queen located at row, col and add these moves to
+    the list
+    '''
+    def getQueenMoves(self, r, c, moves):
+        pass
+    '''
+    Get all the king moves for the king located at row, col and add these moves to
+    the list 
+    ''' 
+    def getKingMoves(self, r, c, moves):
+        pass
 class Move:
     ranksToRows = {"1":7, "2":6, "3":5, "4":4,
                    "5":3, "6":2, "7":1, "8":0}
