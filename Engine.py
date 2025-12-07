@@ -48,8 +48,7 @@ class GameState:
             self.blackKingLocation = (move.endRow, move.endCol)
         # pawn promotion
         if move.isPawnPromotion:
-            promotedPiece = 'Q'  # for simplicity, we will always promote to a queen
-            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + move.promotedPiece
         # En Passant Move
         if move.isEnPassantMove:
             self.board[move.startRow][move.endCol] = "--" #capture the pawn from behind 
@@ -328,27 +327,37 @@ class GameState:
             if self.pins[i][0] == r and self.pins[i][1] == c:
                 piecePinned = True
                 pinDirection = (self.pins[i][2], self.pins[i][3])
-                if self.board[r][c][1] != 'Q':  # can't remove queen from pin on bishop moves, only remove it on rook moves
+                if self.board[r][c][1] != 'Q': 
                     self.pins.remove(self.pins[i])
                 break
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)] # 4 diagonals
+        
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)] 
         enemyColor = "b" if self.whiteToMove else "w"
+        
         for d in directions:
             for i in range(1, 8):
                 endRow = r + d[0] * i
                 endCol = c + d[1] * i
-                if 0 <= endRow < 8 and 0 <= endCol < 8: # on board
+                
+                if 0 <= endRow < 8 and 0 <= endCol < 8: 
                     if not piecePinned or pinDirection == d or pinDirection == (-d[0], -d[1]):
                         endPiece = self.board[endRow][endCol]
-                        if endPiece == "--": # empty square
+                        
+                        if endPiece == "--": 
                             moves.append(Move((r, c), (endRow, endCol), self.board))
-                        elif endPiece[0] == enemyColor: # enemy piece
+                            
+                        elif endPiece[0] == enemyColor: 
                             moves.append(Move((r, c), (endRow, endCol), self.board))
+                            break 
+                            
+                        else: # friendly piece
+                            break 
+                            
+                    else: 
                         break
-                    else: # friendly piece
-                        break
-                else: # off board
+                else: 
                     break
+            
 
     '''
     Get all the queen moves for the queen located at row, col and add these moves to the list
@@ -401,6 +410,7 @@ class Move:
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
         self.isPawnPromotion = (self.pieceMoved == 'wP' and self.endRow == 0) or (self.pieceMoved == 'bP' and self.endRow == 7)
+        self.promotedPiece = 'Q' #Default to queen for simplicity
         self.isEnPassantMove = isEnPassantMove
         if self.isEnPassantMove:
             self.pieceCaptured = 'wP' if self.pieceMoved == 'bP' else 'bP'

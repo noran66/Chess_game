@@ -57,19 +57,20 @@ def main():
     sqSelected = ()  # no square is selected, keep track of the last click of the user (tuple: (row,col))
     playerClicks = []  # keep track of player clicks (two tuples: [(6,4), (4,4)])
     gameOver = False # flag variable for when the game ends
+    playerOne = True # If a Human is playing white, then this will be True. If AI is playing this will be False
+    playerTwo = False # Same as above but for black
 
     while Running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
             if e.type == p.QUIT:
                 Running = False
             # mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
+                if not gameOver and humanTurn:
                     location = p.mouse.get_pos()  # (x,y) location of mouse
                     col = location[0] // SQ_SIZE
                     row = location[1] // SQ_SIZE
-                    
-                    # Removed the check for sidebar click since sidebar is gone
                     
                     if sqSelected == (row, col):  # the user clicked the same square twice
                         sqSelected = ()  # deselect
@@ -81,11 +82,16 @@ def main():
                     if len(playerClicks) == 2:  # after 2nd click
                         move = Engine.Move(playerClicks[0], playerClicks[1], gs.board)
                         print(move.get_chess_notation())
+                        
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:
-                                gs.make_move(validMoves[i]) 
+                                if validMoves[i].isPawnPromotion:
+                                    # Handle pawn promotion choice
+                                    choice = showPromotionChoices(screen, validMoves[i], p.font.SysFont("Arial", 24, True, False))
+                                    validMoves[i].promotedPiece = choice 
+                                gs.make_move(validMoves[i])
                                 moveMade = True
-                                animate = True # animate the move
+                                animate = True 
                                 sqSelected = () 
                                 playerClicks = []
                                 break 
@@ -108,6 +114,13 @@ def main():
                     moveMade = False
                     animate = False
                     gameOver = False
+        
+        # AI move finder
+        if not gameOver and not humanTurn and not moveMade:
+            AIMove = SmartMoveFinder.findRandomMove(validMoves)
+            gs.make_move(AIMove)
+            moveMade = True
+            animate = True
 
         if moveMade:
             if animate:
@@ -129,6 +142,58 @@ def main():
         clock.tick(MAX_FPS)
         p.display.flip()
 
+'''
+Pawn promotion choice display and handling
+'''
+def showPromotionChoices(screen, move, headerFont):
+    # Dim the background
+    overlay = p.Surface((BOARD_WIDTH, BOARD_HEIGHT))
+    overlay.set_alpha(100)
+    overlay.fill(p.Color("black"))
+    screen.blit(overlay, (0,0))
+    
+    # Get piece color and prepare choice images
+    color = move.pieceMoved[0] # 'w' or 'b'
+    choices = ['Q', 'R', 'B', 'N']
+    choiceImages = [IMAGES[color + piece] for piece in choices]
+    
+    # --- UI Adjustment for Spacing ---
+    popupWidth = 360  # Increased width to fit all pieces
+    popupHeight = SQ_SIZE + 50
+    
+    # Center the popup on screen
+    selectionRect = p.Rect((BOARD_WIDTH - popupWidth) // 2, (BOARD_HEIGHT - popupHeight) // 2, popupWidth, popupHeight)
+    
+    p.draw.rect(screen, p.Color("white"), selectionRect)
+    p.draw.rect(screen, p.Color("black"), selectionRect, 2) # Border
+    
+    # Draw header text centered
+    text = headerFont.render("Promote to:", True, p.Color("black"))
+    textRect = text.get_rect(center=(selectionRect.centerx, selectionRect.y + 20))
+    screen.blit(text, textRect)
+    
+    # Draw choice buttons
+    buttonRects = []
+    padding_left = 10  # Adjusted padding
+    spacing = 10       # Adjusted spacing
+    start_y = selectionRect.y + 50
+    
+    for i, img in enumerate(choiceImages):
+        x = selectionRect.x + padding_left + (i * (SQ_SIZE + spacing))
+        y = start_y
+        screen.blit(img, (x, y))
+        buttonRects.append(p.Rect(x, y, SQ_SIZE, SQ_SIZE))
+    
+    p.display.flip()
+    
+    # Wait for user to click on one of the choices
+    while True:
+        for e in p.event.get():
+            if e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()
+                for i, rect in enumerate(buttonRects):
+                    if rect.collidepoint(location):
+                        return choices[i] # Return the chosen piece
 
 '''
 Highlight squares selected and moves for piece selected.
