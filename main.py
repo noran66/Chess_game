@@ -9,6 +9,7 @@ import SmartMoveFinder
 from Engine import *
 from SmartMoveFinder import *
 import os
+import copy
 
 # --- Dimensions and Colors Configuration ---
 BOARD_WIDTH = BOARD_HEIGHT = 512
@@ -106,6 +107,8 @@ def main():
                     moveMade = True
                     animate = False
                     gameOver = False # reset game over on undo
+                    if not playerTwo: # undo again if playing against AI
+                        gs.undoMove()
                 if e.key == p.K_r: # reset when 'r' is pressed
                     gs = Engine.GameState()
                     validMoves = gs.getValidMoves()
@@ -117,7 +120,10 @@ def main():
         
         # AI move finder
         if not gameOver and not humanTurn and not moveMade:
-            AIMove = SmartMoveFinder.findRandomMove(validMoves)
+            gs_copy = copy.deepcopy(gs) # create a copy of the board for AI
+            AIMove = SmartMoveFinder.findBestMove(gs_copy, validMoves)
+            if AIMove is None:
+                AIMove = SmartMoveFinder.findRandomMove(validMoves)
             gs.make_move(AIMove)
             moveMade = True
             animate = True

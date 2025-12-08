@@ -27,6 +27,8 @@ class GameState:
         self.inCheck = False
         self.pins = []
         self.checks = []
+        self.checkMate = False
+        self.staleMate = False
         self.enPassPossible = ()  # coordinates for the square where en passant capture is possible
         
         self.moveFunctions = {
@@ -126,9 +128,13 @@ class GameState:
             moves = self.getAllPossibleMoves()
         if len(moves) == 0:
             if self.inCheck:
-                print("Checkmate")
+                self.checkMate = True  
             else:
-                print("Stalemate")
+                self.staleMate = True  
+        else:
+            self.checkMate = False
+            self.staleMate = False
+            
         return moves
 
     '''
