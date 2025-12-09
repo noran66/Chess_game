@@ -206,35 +206,70 @@ def drawGameState(screen, gs, validMoves, sqSelected, moveLogFont):
 def drawBoard(screen):
     global colors
     colors = [p.Color("white"), p.Color("gray")]
+    font = p.font.SysFont("Arial", 14, True, False) 
+
     for r in range(DIMENSION):
         for c in range(DIMENSION):
             color = colors[(r + c) % 2]
             p.draw.rect(
                 screen, color, p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE)
             )
+            
+            if c == 0:
+                colorText = colors[0] if color == colors[1] else colors[1] 
+                label = font.render(str(8 - r), True, colorText)
+                screen.blit(label, (c * SQ_SIZE + 2, r * SQ_SIZE + 2))
+            
+            if r == 7:
+                colorText = colors[0] if color == colors[1] else colors[1]
+                label = font.render(chr(ord('a') + c), True, colorText)
+                screen.blit(label, (c * SQ_SIZE + SQ_SIZE - 12, r * SQ_SIZE + SQ_SIZE - 15))
 
 
 """ highlight the square selected and valid moves for the piece selected """
 
 
 def highlightSquares(screen, gs, validMoves, sqSelected):
+    # 1. Highlight the last move made to help players see opponent's action
+    if len(gs.moveLog) > 0:
+        lastMove = gs.moveLog[-1]
+        s = p.Surface((SQ_SIZE, SQ_SIZE))
+        s.set_alpha(100)  # Transparency level (0-255)
+        s.fill(p.Color("green")) 
+        screen.blit(s, (lastMove.startCol * SQ_SIZE, lastMove.startRow * SQ_SIZE))
+        screen.blit(s, (lastMove.endCol * SQ_SIZE, lastMove.endRow * SQ_SIZE))
+
+    # 2. Highlight the King in Red if in Check
+    if gs.inCheck():
+        s = p.Surface((SQ_SIZE, SQ_SIZE))
+        s.set_alpha(150)  # Slightly less transparent to show danger
+        s.fill(p.Color("red"))
+        # Find the king location based on whose turn it is
+        if gs.whiteToMove:
+            r, c = gs.whiteKingLocation
+        else:
+            r, c = gs.blackKingLocation
+        screen.blit(s, (c * SQ_SIZE, r * SQ_SIZE))
+
+    # 3. Highlight selected square and valid moves
     if sqSelected != ():
         r, c = sqSelected
-        # make sure that each user can use highlighting ability for its own pieces
+        # Ensure the piece belongs to the current turn (white or black)
         if gs.board[r][c][0] == ("w" if gs.whiteToMove else "b"):
-            # 1. highlight the selected square
             s = p.Surface((SQ_SIZE, SQ_SIZE))
-            s.set_alpha(
-                100
-            )  # zero value is full transparentand 255 means no transperency
-            s.fill(p.Color("blue"))
+            s.set_alpha(100)
+            s.fill(p.Color("blue"))  # Highlight selected square in blue
             screen.blit(s, (c * SQ_SIZE, r * SQ_SIZE))
-            # 2. highlight moves from that selected square
-            s.fill(p.Color("yellow"))
+            
+            
+            # Highlight valid moves from that square
             for move in validMoves:
-                if (
-                    move.startRow == r and move.startCol == c
-                ):  # then those are the valid moves for that particular piece
+                if move.startRow == r and move.startCol == c:
+                    # Logic: Red for captures, Yellow for normal moves
+                    if move.isCapture:
+                        s.fill(p.Color("red")) 
+                    else:
+                        s.fill(p.Color("yellow"))
                     screen.blit(s, (move.endCol * SQ_SIZE, move.endRow * SQ_SIZE))
 
 

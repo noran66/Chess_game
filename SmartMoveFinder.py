@@ -124,11 +124,15 @@ def findMoveNegaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier)
     global nextMove
     if depth == 0:
         return turnMultiplier * scoreBoard(gs)
-    # move ordering - could improve the algorithm a little bit
-    validMoves.sort(key=lambda move: move.isCapture, reverse=True)
-    # random.shuffle(validMoves)
+# --- Move Ordering Optimization ---
+    # We order the moves to check the most promising ones (like captures) first.
+    # This significantly increases the chances of Alpha-Beta pruning cutting off 
+    # bad branches early, making the AI much faster.
+    orderedMoves = orderMoves(validMoves)
+    # ----------------------------------
+
     maxScore = -CHECKMATE
-    for move in validMoves:
+    for move in orderedMoves:
         gs.makeMove(move)
         nextMoves = gs.getValidMoves()
         score = -findMoveNegaMaxAlphaBeta(
@@ -138,49 +142,86 @@ def findMoveNegaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier)
             maxScore = score
             if depth == MAX_DEPTH:
                 nextMove = move
-                print(move, score)
+                # print(move, score) # Commented out to reduce I/O overhead
         gs.undoMove()
-        if maxScore > alpha:  # where the prunning happens
+        
+        # Pruning logic
+        if maxScore > alpha: 
             alpha = maxScore
         if alpha >= beta:
             break
     return maxScore
+
+"""
+    Orders the moves list based on a heuristic score.
+    Logic used: MVV-LVA (Most Valuable Victim - Least Valuable Aggressor).
+    Meaning: Capturing a Queen with a Pawn is better than capturing a Pawn with a Queen.
+    """
+def orderMoves(moves):
+    
+    def moveScore(move):
+        score = 0
+        if move.isCapture:
+            # Get the value of the piece being captured (The Victim)
+            # move.pieceCaptured[1] gives the piece type (e.g., 'Q', 'R', 'p')
+            victimValue = pieceScore.get(move.pieceCaptured[1], 0)
+            
+            # Get the value of the piece moving (The Aggressor)
+            attackerValue = pieceScore.get(move.pieceMoved[1], 0)
+            
+            # Heuristic Formula: 10 * Victim - Aggressor
+            # This prioritizes high-value captures by low-value pieces.
+            score = 10 * victimValue - attackerValue
+            
+        return score
+
+    # Sort the moves in descending order (highest score first)
+    moves.sort(key=moveScore, reverse=True)
+    return moves
 
 
 """
 a little bit more instructive score board method instead of
 the naive solution that's implemented in scoreMaterial()
 notes:
- 1. postive score is good for white and negative score is good for black
+1. postive score is good for white and negative score is good for black
 """
 
 
 def scoreBoard(gs):
-    # checking for those two basic cases here instead of doing
-    # that in the findMoveMinMax()
     if gs.checkmate:
         if gs.whiteToMove:
-            return -CHECKMATE  # black wins
+            return -CHECKMATE 
         else:
-            return CHECKMATE  # white wins
+            return CHECKMATE
     elif gs.stalemate:
         return STALEMATE
+
     score = 0
+    
+    whiteQueens = 0
+    blackQueens = 0
+    
     for row in range(len(gs.board)):
         for col in range(len(gs.board[row])):
             square = gs.board[row][col]
             if square != "--":
-                pps = 0
-                fac = 0.1
-                color = square[0]
                 piece = square[1]
+                color = square[0]
+                
+                pps = 0
                 if piece != "K":
-                    pps += (
-                        piecePositionScores[piece if piece != "p" else square][row][col]
-                        * fac
-                    )
+                     pps = piecePositionScores[piece if piece != "p" else square][row][col] * 0.1
+                if piece == "K":
+                    if (col > 2 and col < 6): 
+                        pps -= 0.3 
+                    else:
+                        pps += 0.2
                 if color == "w":
                     score += pieceScore[piece] + pps
+                    if piece == "Q": whiteQueens += 1
                 elif color == "b":
                     score -= pieceScore[piece] + pps
+                    if piece == "Q": blackQueens += 1
+                    
     return score

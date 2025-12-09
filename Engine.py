@@ -264,18 +264,97 @@ class GameState:
 
     """ to determine if the enemy can attack the square(r, c) """
 
+    """
+    Determine if the enemy can attack the square(r, c).
+    OPTIMIZED VERSION: Instead of generating all opponent moves, 
+    we scan outwards from the square (r, c) to see if pieces are attacking it.
+    """
     def squareUnderAttack(self, r, c):
-        # first switch to the opponents move
-        self.whiteToMove = not self.whiteToMove
-        # generate all of its moves
-        oppMoves = self.getAllPossibleMoves()
-        self.whiteToMove = not self.whiteToMove  # switch the turns back
-        # check if any of those moves is attacking my kings location
-        for move in oppMoves:
-            if move.endRow == r and move.endCol == c:  # now my king is under attack
-                # note: we have done the move on our back end, so no need to undoMove() it
-                return True
-        return False  # none of my opponents move will be attacking my king
+        # 1. Determine opponent color based on whose turn it effectively is regarding the check
+        # If self.whiteToMove is True, we are checking if White is under attack by Black
+        enemyColor = "b" if self.whiteToMove else "w"
+        
+        # Directions for Rook/Queen (Orthogonal)
+        directions = ((-1, 0), (0, -1), (1, 0), (0, 1))
+        for d in directions:
+            for i in range(1, 8):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        continue
+                    else:
+                        # Check if the piece is an enemy Rook or Queen
+                        if endPiece[0] == enemyColor:
+                            pieceType = endPiece[1]
+                            if pieceType == "R" or pieceType == "Q":
+                                return True
+                        break # Blocked by any piece
+                else:
+                    break
+
+        # Directions for Bishop/Queen (Diagonal)
+        directions = ((-1, -1), (-1, 1), (1, -1), (1, 1))
+        for d in directions:
+            for i in range(1, 8):
+                endRow = r + d[0] * i
+                endCol = c + d[1] * i
+                if 0 <= endRow < 8 and 0 <= endCol < 8:
+                    endPiece = self.board[endRow][endCol]
+                    if endPiece == "--":
+                        continue
+                    else:
+                        # Check if the piece is an enemy Bishop or Queen
+                        if endPiece[0] == enemyColor:
+                            pieceType = endPiece[1]
+                            if pieceType == "B" or pieceType == "Q":
+                                return True
+                        break # Blocked by any piece
+                else:
+                    break
+        
+        # Check for Knight attacks
+        knightMoves = ((-1, -2), (-1, 2), (-2, -1), (-2, 1), (1, -2), (1, 2), (2, -1), (2, 1))
+        for m in knightMoves:
+            endRow = r + m[0]
+            endCol = c + m[1]
+            if 0 <= endRow < 8 and 0 <= endCol < 8:
+                endPiece = self.board[endRow][endCol]
+                if endPiece[0] == enemyColor and endPiece[1] == "N":
+                    return True
+
+        # Check for King attacks (adjacent squares)
+        kingMoves = ((-1, 0), (0, -1), (1, 0), (0, 1), 
+                    (-1, -1), (-1, 1), (1, -1), (1, 1))
+        for m in kingMoves:
+            endRow = r + m[0]
+            endCol = c + m[1]
+            if 0 <= endRow < 8 and 0 <= endCol < 8:
+                endPiece = self.board[endRow][endCol]
+                if endPiece[0] == enemyColor and endPiece[1] == "K":
+                    return True
+
+        # Check for Pawn attacks
+        # Note: Pawn captures are diagonal. 
+        # If enemy is White, they attack from (r+1) upwards to us.
+        # If enemy is Black, they attack from (r-1) downwards to us.
+        if enemyColor == "w": 
+            # Check if a white pawn is at [r+1][c-1] or [r+1][c+1] attacking us
+            if r + 1 < 8:
+                if c - 1 >= 0:
+                    if self.board[r + 1][c - 1] == "wp": return True
+                if c + 1 < 8:
+                    if self.board[r + 1][c + 1] == "wp": return True
+        else: # enemy is Black
+            # Check if a black pawn is at [r-1][c-1] or [r-1][c+1] attacking us
+            if r - 1 >= 0:
+                if c - 1 >= 0:
+                    if self.board[r - 1][c - 1] == "bp": return True
+                if c + 1 < 8:
+                    if self.board[r - 1][c + 1] == "bp": return True
+
+        return False
 
     """ all moves without considering checks """
 
