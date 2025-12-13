@@ -112,7 +112,7 @@ def findBestMoveMinMax(gs, validMoves, returnQueue):
         gs, validMoves, MAX_DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.whiteToMove else -1
     )
     returnQueue.put(nextMove)
-    print(returnQueue.get())
+    # print(returnQueue.get())
 
 
 """

@@ -21,15 +21,12 @@ from multiprocessing import Process, Queue
 current_path = os.path.dirname(__file__)  # Where your .py file is located
 image_path = os.path.join(current_path, "images")  # The image folder path
 
-# 400 is another good option and it depends on how good the
-# images you have in terms of quality and resolution and 512 is a power of 2
 BOARD_WIDTH = BOARD_HEIGHT = 512
 MOVE_LOG_PANEL_WIDTH = 270
 MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
-# the chess board is 8x8 :)
 DIMENSION = 8
 SQ_SIZE = BOARD_HEIGHT // DIMENSION
-# for animation later on
+# for animation 
 MAX_FPS = 15
 IMAGES = {}
 
@@ -65,13 +62,10 @@ def main():
     # so we can generate another new set of valid moves
     moveMade = False
     animate = False  # a flag to know when to use the animation function
-    # we now load the images once before the (while true) loop
-    loadImages()
+    loadImages()     # we now load the images once before the (while true) loop
     running = True
     sqSelected = ()  # simply to keep track of the last click for the user
-    # playerClicks: is a list to keep track of player clicks
-    # to act like a vector to move the piece from one square to another
-    playerClicks = []
+    playerClicks = []     # a list to keep track of player clicks
     gameOver = False
     # if a human is playing, then this will be true
     # and if an AI is playing it'll be false
@@ -86,11 +80,6 @@ def main():
             # handling the exit condition
             if e.type == p.QUIT:
                 running = False
-            # handle the user mouse input, simply the idea of click and go
-            # we may be later add the functionality of drag and drop
-            # note if we later added somthing like a dashboard to the
-            # scree, we need to filter those locations as we just need
-            # the locations on the actual board
             elif e.type == p.MOUSEBUTTONDOWN:
                 if not gameOver:
                     location = p.mouse.get_pos()  # like its (x, y) location
@@ -102,15 +91,19 @@ def main():
                         playerClicks = []  # reset that also
                     else:
                         sqSelected = (row, col)
-                        playerClicks.append(
-                            sqSelected
-                        )  # appened for poth 1st and 2nd clicks
-                    if (
-                        len(playerClicks) == 2 and humanTurn
-                    ):  # after the second click, we need to move
+                        playerClicks.append(sqSelected)  # appened for poth 1st and 2nd clicks
+                    if (len(playerClicks) == 2 and humanTurn):  # after the second click, we need to move
                         move = Move(playerClicks[0], playerClicks[1], gs.board)
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:
+                                targetMove = validMoves[i] 
+                                
+                                #  Pawn Promotion Handling 
+                                if targetMove.isPawnPromotion:
+                                    # 1. Trigger the UI to select a piece
+                                    promotedType = userSelectPromotion(screen, gs, targetMove)
+                                    # 2. Update the move with the user's choice
+                                    targetMove.promotedPiece = promotedType
                                 # print(move.getChessNotation()) # for debugging
                                 gs.makeMove(validMoves[i])
                                 moveMade = True
@@ -205,7 +198,7 @@ def drawGameState(screen, gs, validMoves, sqSelected, moveLogFont):
 
 def drawBoard(screen):
     global colors
-    colors = [p.Color("white"), p.Color("gray")]
+    colors = [p.Color("white"), p.Color("light blue")]
     font = p.font.SysFont("Arial", 14, True, False) 
 
     for r in range(DIMENSION):
@@ -240,7 +233,7 @@ def highlightSquares(screen, gs, validMoves, sqSelected):
         screen.blit(s, (lastMove.endCol * SQ_SIZE, lastMove.endRow * SQ_SIZE))
 
     # 2. Highlight the King in Red if in Check
-    if gs.inCheck():
+    if gs.inCheck:
         s = p.Surface((SQ_SIZE, SQ_SIZE))
         s.set_alpha(150)  # Slightly less transparent to show danger
         s.fill(p.Color("red"))
@@ -282,7 +275,55 @@ def drawPieces(screen, board):
                     IMAGES[piece], p.Rect(c * SQ_SIZE, r * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 )
 
-
+"""
+Display a popup menu to let the user choose the promotion piece.
+It halts the game loop until a selection is made.
+"""
+def userSelectPromotion(screen, gs, move):
+    # 1. Determine the color of the piece being promoted
+    color = move.pieceMoved[0] # 'w' or 'b'
+    
+    # 2. List of promotion options (Queen, Rook, Bishop, Knight)
+    promotionPieces = ["Q", "R", "B", "N"]
+    
+    # 3. Determine menu direction
+    # If promoting at row 0 (White), menu goes down (+1). 
+    # If promoting at row 7 (Black), menu goes up (-1).
+    direction = 1 if move.endRow == 0 else -1
+    
+    # Wait for user selection
+    while True:
+        for i, pieceCode in enumerate(promotionPieces):
+            # Calculate the position for each option
+            rowPos = move.endRow + (i * direction)
+            colPos = move.endCol
+            
+            # Draw background rectangle for visibility
+            p.draw.rect(screen, p.Color("white"), p.Rect(colPos * SQ_SIZE, rowPos * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+            
+            # Draw the piece image
+            pieceImage = IMAGES[color + pieceCode]
+            screen.blit(pieceImage, p.Rect(colPos * SQ_SIZE, rowPos * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+        
+        p.display.flip()
+        
+        # Event handling specific to this popup
+        for e in p.event.get():
+            if e.type == p.MOUSEBUTTONDOWN:
+                location = p.mouse.get_pos()
+                clickRow = location[1] // SQ_SIZE
+                clickCol = location[0] // SQ_SIZE
+                
+                # Check if the click is within the menu column
+                if clickCol == move.endCol:
+                    # Calculate index based on the clicked row relative to the promotion square
+                    clickedIndex = (clickRow - move.endRow) * direction
+                    
+                    # If valid option clicked, return the piece code
+                    if 0 <= clickedIndex < len(promotionPieces):
+                        return promotionPieces[int(clickedIndex)]
+                    
+                    
 """ the animation function """
 
 
