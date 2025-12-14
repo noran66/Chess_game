@@ -14,9 +14,9 @@ COLORS = [p.Color(240, 217, 181), p.Color(181, 136, 99)]
 
 # Difficulty Levels (Depth)
 DIFFICULTY = {
-    'EASY': 1,
-    'MEDIUM': 2,
-    'HARD': 3
+    'EASY': 2,
+    'MEDIUM': 3,
+    'HARD': 4
 }
 
 # AI Scores

@@ -54,7 +54,7 @@ def main():
     gameOver = False
 
     # Player Configuration
-    playerOne = False   # If a human is playing white, this will be True
+    playerOne = True   # If a human is playing white, this will be True
     playerTwo = False  # If a human is playing black, this will be True (False means AI)
 
     # AI Variables
