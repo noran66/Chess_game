@@ -1,8 +1,4 @@
-"""
-This is responsiwle for storing all the information about the current state
-of the chess game. Also, be responsible for determining the valid moves at
-the current state. And it'll keep a move log.
-"""
+from .move import Move
 
 class GameState:
     def __init__(self):
@@ -524,67 +520,11 @@ class GameState:
                 moves.append(Move((r, c), (r, c - 2), self.board, isCastleMove=True))
 
 
+
+
 class CastleRights:
     def __init__(self, wks, bks, wqs, bqs):
         self.wks = wks
         self.bks = bks
         self.wqs = wqs
         self.bqs = bqs
-
-
-class Move:
-    ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4, "5": 3, "6": 2, "7": 1, "8": 0}
-    rowsToRanks = {v: k for k, v in ranksToRows.items()}
-    fileToCols = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
-    colsToFiles = {v: k for k, v in fileToCols.items()}
-
-    def __init__(
-        self, startSq, endSq, board, isEnpassantMove=False, isCastleMove=False, isPawnPromotion=False
-    ):
-        self.startRow, self.startCol = startSq
-        self.endRow, self.endCol = endSq
-        self.pieceMoved = board[self.startRow][self.startCol]
-        self.pieceCaptured = board[self.endRow][self.endCol]
-        self.promotedPiece = ""
-        self.isEnpassantMove = isEnpassantMove
-        if self.isEnpassantMove:
-            self.pieceCaptured = "wp" if self.pieceMoved == "bp" else "bp"
-        
-        # Pawn Promotion
-        self.isPawnPromotion = isPawnPromotion
-        if (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7):
-            self.isPawnPromotion = True
-
-        self.isCastleMove = isCastleMove
-        self.isCapture = self.pieceCaptured != "--"
-
-        self.moveID = (
-            self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
-        )
-
-    def __eq__(self, other):
-        if isinstance(other, Move):
-            return self.moveID == other.moveID
-        return False
-
-    def getChessNotation(self):
-        return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(
-            self.endRow, self.endCol
-        )
-
-    def getRankFile(self, r, c):
-        return self.colsToFiles[c] + self.rowsToRanks[r]
-
-    def __str__(self):
-        if self.isCastleMove:
-            return "O-O" if self.endCol == 6 else "O-O-O"
-        endSquare = self.getRankFile(self.endRow, self.endCol)
-        if self.pieceMoved[1] == "p":
-            if self.isCapture:
-                return self.colsToFiles[self.startCol] + "x" + endSquare
-            else:
-                return endSquare
-        moveString = self.pieceMoved[1]
-        if self.isCapture:
-            moveString += "x"
-        return moveString + endSquare
