@@ -1,11 +1,11 @@
-# ♟️ Python Chess AI
+# ♟️ Intelligent Python Chess AI
 
-An advanced Chess Game built with **Python** and **Pygame**, featuring a smart AI opponent powered by the **Minimax Algorithm** with **Alpha-Beta Pruning**.
+An advanced Chess Engine built with **Python** and **Pygame**, featuring a smart AI opponent powered by **NegaMax**, **Alpha-Beta Pruning**, **Transposition Tables**, and an **Opening Book**.
 
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
-- [Features](#-features)
+- [Key Features](#-key-features)
 - [Installation](#-installation)
 - [How to Play](#-how-to-play)
 - [Project Structure](#-project-structure)
@@ -16,36 +16,38 @@ An advanced Chess Game built with **Python** and **Pygame**, featuring a smart A
 
 ## 🧐 Overview
 
-This project is a fully functional chess engine that allows a human player to compete against an Artificial Intelligence. The game includes a graphical user interface (GUI), move validation, and game state management (Check, Checkmate, Stalemate). The AI runs on a separate process using `multiprocessing` to ensure smooth UI performance while thinking.
+This project is a fully functional chess engine developed as an AI coursework project. It demonstrates the implementation of classic Game Theory algorithms combined with modern software engineering practices. The engine supports **Human vs. Human** and **Human vs. AI** modes, featuring a sophisticated AI that uses memory optimization (Transposition Tables) and pre-calculated opening strategies (e.g., Napoleon's Plan) to play at a high level.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- **🤖 Intelligent AI:**
-  - Uses **Minimax Algorithm** with **Alpha-Beta Pruning** for efficiency.
-  - **Move Ordering** optimization (prioritizes captures) to prune trees faster.
-  - Adjustable difficulty levels (Search Depth).
-- **🎮 Interactive GUI:**
-  - Start Menu to select difficulty (**Easy**, **Medium**, **Hard**).
-  - Move highlighting (valid moves, last move, check alerts).
-  - Smooth piece animations.
-- **⚙️ Complete Chess Logic:**
-  - Valid move generation including pins and checks.
-  - **Castling** (King-side & Queen-side).
-  - **En Passant** captures.
-  - **Pawn Promotion** (GUI selector for Human, Auto-Queen for AI).
-  - Endgame detection (Checkmate & Stalemate).
-- **🛠️ Tools:**
-  - **Undo Move:** Press `Z` to undo the last move.
-  - **Reset Game:** Press `R` to restart.
+### 🧠 Advanced AI
+- **Search Algorithm:** Uses **NegaMax** (Minimax variant) with **Alpha-Beta Pruning** for deep calculation.
+- **Memory Optimization:** Implements **Transposition Tables** (Hashing) to remember previously evaluated board positions, drastically reducing computation time.
+- **Opening Book:** The AI possesses "knowledge" of famous openings:
+  - **White:** Executes **Napoleon's Plan (Scholar's Mate)** if allowed.
+  - **Black:** Plays classic central defense logic.
+- **Smart Move Ordering:** Prioritizes captures using **MVV-LVA** (Most Valuable Victim - Least Valuable Aggressor) to maximize pruning efficiency.
+
+### 🎮 Game Modes & Interface
+- **Multi-Stage Menu:**
+  1. Select Mode (**PvP** or **Player vs AI**).
+  2. Select Side (**White** or **Black**).
+  3. Select Difficulty (**Easy**, **Medium**, **Hard**).
+- **Interactive GUI:** Piece highlighting, legal move suggestions, and smooth animations.
+- **Pawn Promotion:** Interactive selection menu for human players (Auto-Queen for AI).
+
+### ⚙️ Complete Chess Logic
+- **Rule Compliance:** Handles **Castling**, **En Passant**, **Pawn Promotion**, and **Pins/Checks**.
+- **Stalemate Detection:** Automatically detects draws via **Threefold Repetition** or insufficient material.
+- **Multiprocessing:** The AI runs on a separate process to ensure the UI remains responsive while the computer thinks.
 
 ---
 
 ## 📥 Installation
 
-1.  **Clone the repository (or download the files):**
-
+1.  **Clone the repository:**
     ```bash
     git clone [https://github.com/noran66/Chess_game.git](https://github.com/noran66/Chess_game.git)
     cd Chess_game
@@ -53,7 +55,6 @@ This project is a fully functional chess engine that allows a human player to co
 
 2.  **Install dependencies:**
     This project requires `pygame`.
-
     ```bash
     pip install pygame
     ```
@@ -67,61 +68,62 @@ This project is a fully functional chess engine that allows a human player to co
 
 ## 🎮 How to Play
 
-1.  **Start Screen:** Click on a difficulty level (**Easy**, **Medium**, or **Hard**) to begin.
+1.  **Menu Navigation:**
+    - **Step 1:** Choose **PvP** (Human vs Human) or **Player vs AI**.
+    - **Step 2:** (If vs AI) Choose your color (**White** or **Black**).
+    - **Step 3:** Choose Difficulty (determines AI search depth).
 2.  **Gameplay:**
-    - Click on a white piece to select it (valid moves will be highlighted).
-    - Click on a destination square to move.
+    - Click on a piece to view valid moves (highlighted in yellow).
+    - Click on a target square to move (captures highlighted in red).
 3.  **Controls:**
     - **`Z` Key:** Undo the last move.
-    - **`R` Key:** Reset the board and go back to the starting position.
+    - **`R` Key:** Reset the game and return to the Main Menu.
 
 ---
 
 ## 📂 Project Structure
 
-The project follows a modular architecture separating Logic, AI, and UI.
+The project follows a modular architecture:
 
 ```text
 Chess_Project/
 │
-├── main.py                # Entry point, Game Loop, GUI & Input handling
-├── config.py              # Global constants (Screen size, Colors, Difficulty settings)
+├── main.py                # Entry point, GUI, Menu Logic & Multiprocessing
+├── config.py              # Global constants (Dimensions, Colors, Depth settings)
 │
-├── Engine/                # Game Logic Module
-│   ├── gameState.py       # Stores board state, logs moves, checks rules
-│   └── move.py            # Move class & Chess notation conversion
+├── Engine/                # Core Logic Module
+│   ├── gameState.py       # Board representation, Move validation, History log
+│   └── move.py            # Move class & Chess notation
 │
-├── AI/                    # Artificial Intelligence Module
-│   ├── moveFinder.py      # Minimax algorithm & Alpha-Beta Pruning implementation
-│   └── evaluation.py      # Heuristic evaluation (Piece scores & Position tables)
+├── AI/                    # Intelligence Module
+│   ├── moveFinder.py      # Search Algorithms (NegaMax), Opening Book, Transposition Table
+│   └── evaluation.py      # Static Evaluation (Material & Piece-Square Tables)
 │
-└── images/                # Folder containing piece assets (.png files)
-
-Technical Details:
---The Engine
+└── images/                # Asset folder (.png files)
+🧠 Technical Details
+The Engine
 Board Representation: 8x8 2D List.
 
-Move Generation: Pseudo-legal moves are generated first, then filtered to remove moves that leave the King in check.
+Anti-Loop Logic: Uses a boardHistory list to detect 3-fold repetition and enforce Stalemate.
 
---The AI
-Algorithm: NegaMax variant of Minimax.
+The AI Architecture
+Algorithm: Recursive NegaMax with Alpha-Beta Pruning.
 
-Optimization:
+Optimization (The "Brain"):
 
-Alpha-Beta Pruning: Cuts off search branches that are mathematically worse than previously found moves.
+Transposition Table: Uses a dictionary to map board hash keys to scores. If a position repeats, the score is retrieved instantly (Memoization).
 
-Move Ordering: Evaluates captures first (MVV-LVA logic) to maximize pruning.
+Move Ordering: Sorts moves before searching to increase the likelihood of early cut-offs.
 
-Evaluation Function:
+Knowledge (The "Book"):
 
-Calculates material difference.
-
-Uses Piece-Square Tables to evaluate positional advantages (e.g., Knights in the center, Rooks on open files).
+Hardcoded logic for the first ~4 moves to simulate professional play styles without calculating.
 
 👤 Author
 Developed by Noran
 
-Language: Python 3.9.13
+Department: AI
 
-Year: 2025
-```
+Class: 2027
+
+Language: Python 3.9.13

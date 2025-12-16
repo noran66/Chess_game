@@ -35,6 +35,8 @@ class GameState:
         self.pins = []
         self.checks = []
         
+        self.boardHistory = []
+        
         # the corrdinates where an enpassant capture is possible
         self.enpassantPossible = ()
         self.enpassantPossibleLog = [self.enpassantPossible]
@@ -92,6 +94,9 @@ class GameState:
                 self.currentCastlingRights.bqs,
             )
         )
+        
+        boardHash = str(self.board) + str(self.whiteToMove)
+        self.boardHistory.append(boardHash)
 
     def undoMove(self):
         if len(self.moveLog) != 0:
@@ -126,6 +131,9 @@ class GameState:
                 elif move.endCol - move.startCol == -2: 
                     self.board[move.endRow][move.endCol - 2] = self.board[move.endRow][move.endCol + 1]
                     self.board[move.endRow][move.endCol + 1] = "--"
+            
+            if len(self.boardHistory) > 0:
+                self.boardHistory.pop()
 
     def updateCastlRights(self, move):
         if move.pieceMoved == "wK":
@@ -199,6 +207,11 @@ class GameState:
                 self.getKingMove(kingRow, kingCol, moves)
         else: # not in check so all moves are fine
             moves = self.getAllPossibleMoves()
+        
+        boardHash = str(self.board) + str(self.whiteToMove)
+        repetition = False
+        if self.boardHistory.count(boardHash) >= 3:
+            repetition = True
             
         if len(moves) == 0:
             if self.inCheck:
@@ -207,7 +220,10 @@ class GameState:
                 self.stalemate = True
         else:
             self.checkmate = False
-            self.stalemate = False
+            if repetition:
+                self.stalemate = True
+            else:
+                self.stalemate = False
             
         # Castling moves
         if self.whiteToMove:
@@ -518,8 +534,6 @@ class GameState:
         ):
             if not self.squareUnderAttack(r, c - 1) and not self.squareUnderAttack(r, c - 2):
                 moves.append(Move((r, c), (r, c - 2), self.board, isCastleMove=True))
-
-
 
 
 class CastleRights:
